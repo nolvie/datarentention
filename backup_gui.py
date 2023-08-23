@@ -4,6 +4,8 @@ import threading
 import smbclient
 import stat
 import logging
+import tkinter as tk
+from tkinter import Toplevel, Button, Label, Frame
 from tkinter import *
 from tkinter import ttk, messagebox
 from getpass import getpass
@@ -30,25 +32,25 @@ class BackupGUI:
             master.grid_columnconfigure(i, weight=1)
 
         self.hostname_label = Label(master, text="Hostname:")
-        self.hostname_label.grid(row=0, column=0, sticky=E, pady=(0, 0))
+        self.hostname_label.grid(row=0, column=0, sticky=E, padx=(50, 0), pady=(0, 0))
 
         self.hostname_value = StringVar()
         self.hostname_entry = Entry(master, textvariable=self.hostname_value)
-        self.hostname_entry.grid(row=0, column=1, sticky=W, pady=(0, 0))
+        self.hostname_entry.grid(row=0, column=1, sticky=W, padx=(0, 50), pady=(0, 0))
 
         self.username_label = Label(master, text="Username:")
-        self.username_label.grid(row=1, column=0, sticky=E, pady=(0, 0))
+        self.username_label.grid(row=1, column=0, sticky=E, padx=(50, 0), pady=(0, 0))
 
         self.username_value = StringVar()
         self.username_entry = Entry(master, textvariable=self.username_value)
-        self.username_entry.grid(row=1, column=1, sticky=W, pady=(0, 0))
+        self.username_entry.grid(row=1, column=1, sticky=W, padx=(0, 50), pady=(0, 0))
 
         self.password_label = Label(master, text="Password:")
-        self.password_label.grid(row=2, column=0, sticky=E, pady=(0, 0))
+        self.password_label.grid(row=2, column=0, sticky=E, padx=(50, 0), pady=(0, 0))
 
         self.password_value = StringVar()
         self.password_entry = Entry(master, textvariable=self.password_value, show="*")
-        self.password_entry.grid(row=2, column=1, sticky=W, pady=(0, 0))
+        self.password_entry.grid(row=2, column=1, sticky=W, padx=(0, 50), pady=(0, 0))
         
         button_frame = Frame(master)
         button_frame.grid(row=3, rowspan=2, columnspan=2)
@@ -351,6 +353,28 @@ class BackupGUI:
                 self.log_info(f"Failed to copy {item_type}: {source} due to error: {str(e)}", user_friendly=True)
                 self.error_dict[str(e)] = self.error_dict.get(str(e), 0) + 1
                 
+class BackupDialog:
+    def __init__(self, master, transferred_files, errors):
+        self.top = Toplevel(master)
+        self.top.title("Backup Status")
+
+        # Message
+        msg = f"Backup completed with {transferred_files} files transferred and {errors} errors."
+        self.message_label = Label(self.top, text=msg)
+        self.message_label.pack(pady=20)
+
+        # Buttons Frame
+        self.button_frame = Frame(self.top)
+        self.button_frame.pack(pady=20)
+
+        # Close Button
+        self.close_button = Button(self.button_frame, text="Close", command=self.top.destroy)
+        self.close_button.pack(side="left", padx=10)
+
+        # Report Issue Button (unused for now)
+        self.report_issue_button = Button(self.button_frame, text="Report Issue", state=tk.DISABLED)
+        self.report_issue_button.pack(side="left", padx=10)
+        
 def main():
     root = Tk()
     backup_gui = BackupGUI(root)
