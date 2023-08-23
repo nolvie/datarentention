@@ -30,25 +30,25 @@ class BackupGUI:
             master.grid_columnconfigure(i, weight=1)
 
         self.hostname_label = Label(master, text="Hostname:")
-        self.hostname_label.grid(row=0, column=0, sticky=E, pady=(0, 2))
+        self.hostname_label.grid(row=0, column=0, sticky=E, pady=(0, 0))
 
         self.hostname_value = StringVar()
         self.hostname_entry = Entry(master, textvariable=self.hostname_value)
-        self.hostname_entry.grid(row=0, column=1, sticky=W, pady=(0, 2))
+        self.hostname_entry.grid(row=0, column=1, sticky=W, pady=(0, 0))
 
         self.username_label = Label(master, text="Username:")
-        self.username_label.grid(row=1, column=0, sticky=E, pady=(0, 2))
+        self.username_label.grid(row=1, column=0, sticky=E, pady=(0, 0))
 
         self.username_value = StringVar()
         self.username_entry = Entry(master, textvariable=self.username_value)
-        self.username_entry.grid(row=1, column=1, sticky=W, pady=(0, 2))
+        self.username_entry.grid(row=1, column=1, sticky=W, pady=(0, 0))
 
         self.password_label = Label(master, text="Password:")
-        self.password_label.grid(row=2, column=0, sticky=E, pady=(0, 2))
+        self.password_label.grid(row=2, column=0, sticky=E, pady=(0, 0))
 
         self.password_value = StringVar()
         self.password_entry = Entry(master, textvariable=self.password_value, show="*")
-        self.password_entry.grid(row=2, column=1, sticky=W, pady=(0, 2))
+        self.password_entry.grid(row=2, column=1, sticky=W, pady=(0, 0))
         
         button_frame = Frame(master)
         button_frame.grid(row=3, rowspan=2, columnspan=2)
@@ -79,16 +79,16 @@ class BackupGUI:
         
         self.skip_admin_accounts = BooleanVar()
         self.skip_admin_accounts.set(True)
-        self.skip_admin_accounts_checkbox = Checkbutton(master, text="Skip Administrator Accounts", variable=self.skip_admin_accounts)
-        self.skip_admin_accounts_checkbox.grid(row=0, column=1, sticky=E)
+        self.skip_admin_accounts_checkbox = Checkbutton(master, text="Skip Admins", variable=self.skip_admin_accounts)
+        self.skip_admin_accounts_checkbox.grid(row=0, column=0, sticky=W, pady=(0, 2))
 
         self.skip_programdata_folder = BooleanVar()
-        self.skip_programdata_folder_checkbox = Checkbutton(master, text="Skip ProgramData Folder", variable=self.skip_programdata_folder)
-        self.skip_programdata_folder_checkbox.grid(row=1, column=1, sticky=E)
+        self.skip_programdata_folder_checkbox = Checkbutton(master, text="Skip ProgramData", variable=self.skip_programdata_folder)
+        self.skip_programdata_folder_checkbox.grid(row=1, column=0, sticky=W, pady=(0, 2))
         
         self.copy_local_disk = BooleanVar()
-        self.copy_local_disk_checkbox = Checkbutton(master, text="Copy All Local Files on C:", variable=self.copy_local_disk, command=self.on_copy_local_disk_changed)
-        self.copy_local_disk_checkbox.grid(row=2, column=1, sticky=E)
+        self.copy_local_disk_checkbox = Checkbutton(master, text="Copy Disk C:", variable=self.copy_local_disk, command=self.on_copy_local_disk_changed)
+        self.copy_local_disk_checkbox.grid(row=2, column=0, sticky=W, pady=(0, 2))
 
         self.error_dict = {}
         master.protocol("WM_DELETE_WINDOW", self.on_close)
