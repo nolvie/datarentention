@@ -370,28 +370,21 @@ class BackupGUI:
             self.top.title("Backup Status")
             self.error_log = error_log
 
-            # Message
             msg = f"Backup completed with {transferred_files} files transferred and {errors} errors."
             self.message_label = Label(self.top, text=msg)
             self.message_label.pack(pady=20)
 
-            # Buttons Frame
             self.button_frame = Frame(self.top)
             self.button_frame.pack(pady=20)
 
-            # Close Button
             self.close_button = Button(self.button_frame, text="Close", command=self.top.destroy)
             self.close_button.pack(side="left", padx=10)
 
-            # Show Errors Button
             self.show_errors_button = Button(self.button_frame, text="Show Errors", command=self.show_errors)
             self.show_errors_button.pack(side="left", padx=10)
 
-            # Report Issue Button (unused for now)
             self.report_issue_button = Button(self.button_frame, text="Report Issue", state=tk.DISABLED)
             self.report_issue_button.pack(side="left", padx=10)
-            
-            BackupDialog(self.master, self.transferred_files_count, self.errors_count, self.error_log)
             
         def show_errors(self):
             ErrorLogDialog(self.top, self.error_log)
@@ -401,12 +394,10 @@ class BackupGUI:
             self.top = Toplevel(master)
             self.top.title("Error Log")
 
-            # Scrollable Text Widget for displaying errors
             self.text_widget = Text(self.top, wrap=WORD, width=50, height=20)
             self.text_widget.pack(pady=20, padx=20)
             self.text_widget.insert(1.0, "\n".join(error_log))
 
-            # Close Button
             self.close_button = Button(self.top, text="Close", command=self.top.destroy)
             self.close_button.pack(pady=20)
         
