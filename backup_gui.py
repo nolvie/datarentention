@@ -22,7 +22,7 @@ UNKNOWN = "unknown"
 class BackupGUI:
     def __init__(self, master):
         self.master = master
-        master.title("Christine's Backup Tool v0.5a")
+        master.title("Christine's Backup Tool v0.5b")
 
         for i in range(5):
             master.grid_rowconfigure(i, weight=0)
@@ -97,6 +97,7 @@ class BackupGUI:
         
         self.transferred_files_count = 0
         self.errors_count = 0
+        self.error_log = []
         
     def on_close(self):
         if self.backup_data_thread and self.backup_data_thread.is_alive():
@@ -358,31 +359,56 @@ class BackupGUI:
                     smbclient.mkdir(destination)
                     self.copy_directory(source, destination)
             except Exception as e:
-                self.log_info(f"Failed to copy {item_type}: {source} due to error: {str(e)}", user_friendly=True)
-                self.error_dict[str(e)] = self.error_dict.get(str(e), 0) + 1
+                error_msg = f"Error copying {source}: {str(e)}"
+                self.log_info(error_msg, user_friendly=False)
                 self.errors_count += 1
+                self.error_log.append(error_msg)
                 
-class BackupDialog:
-    def __init__(self, master, transferred_files, errors):
-        self.top = Toplevel(master)
-        self.top.title("Backup Status")
+    class BackupDialog:
+        def __init__(self, master, transferred_files, errors, error_log):
+            self.top = Toplevel(master)
+            self.top.title("Backup Status")
+            self.error_log = error_log
 
-        # Message
-        msg = f"Backup completed with {transferred_files} files transferred and {errors} errors."
-        self.message_label = Label(self.top, text=msg)
-        self.message_label.pack(pady=20)
+            # Message
+            msg = f"Backup completed with {transferred_files} files transferred and {errors} errors."
+            self.message_label = Label(self.top, text=msg)
+            self.message_label.pack(pady=20)
 
-        # Buttons Frame
-        self.button_frame = Frame(self.top)
-        self.button_frame.pack(pady=20)
+            # Buttons Frame
+            self.button_frame = Frame(self.top)
+            self.button_frame.pack(pady=20)
 
-        # Close Button
-        self.close_button = Button(self.button_frame, text="Close", command=self.top.destroy)
-        self.close_button.pack(side="left", padx=10)
+            # Close Button
+            self.close_button = Button(self.button_frame, text="Close", command=self.top.destroy)
+            self.close_button.pack(side="left", padx=10)
 
-        # Report Issue Button (unused for now)
-        self.report_issue_button = Button(self.button_frame, text="Report Issue", state=tk.DISABLED)
-        self.report_issue_button.pack(side="left", padx=10)
+            # Show Errors Button
+            self.show_errors_button = Button(self.button_frame, text="Show Errors", command=self.show_errors)
+            self.show_errors_button.pack(side="left", padx=10)
+
+            # Report Issue Button (unused for now)
+            self.report_issue_button = Button(self.button_frame, text="Report Issue", state=tk.DISABLED)
+            self.report_issue_button.pack(side="left", padx=10)
+            
+            BackupDialog(self.master, self.transferred_files_count, self.errors_count, self.error_log)
+            
+        def show_errors(self):
+            ErrorLogDialog(self.top, self.error_log)
+            
+    class ErrorLogDialog:
+        def __init__(self, master, error_log):
+            self.top = Toplevel(master)
+            self.top.title("Error Log")
+
+            # Scrollable Text Widget for displaying errors
+            self.text_widget = Text(self.top, wrap=WORD, width=50, height=20)
+            self.text_widget.pack(pady=20, padx=20)
+            self.text_widget.insert(1.0, "\n".join(error_log))
+
+            # Close Button
+            self.close_button = Button(self.top, text="Close", command=self.top.destroy)
+            self.close_button.pack(pady=20)
         
 def main():
     root = Tk()
