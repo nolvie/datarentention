@@ -22,7 +22,7 @@ UNKNOWN = "unknown"
 class BackupGUI:
     def __init__(self, master):
         self.master = master
-        master.title("Christine's Backup Tool v0.4i")
+        master.title("Christine's Backup Tool v0.5a")
 
         for i in range(5):
             master.grid_rowconfigure(i, weight=0)
@@ -95,6 +95,9 @@ class BackupGUI:
         self.error_dict = {}
         master.protocol("WM_DELETE_WINDOW", self.on_close)
         
+        self.transferred_files_count = 0
+        self.errors_count = 0
+        
     def on_close(self):
         if self.backup_data_thread and self.backup_data_thread.is_alive():
             self.stop_backup()
@@ -142,7 +145,8 @@ class BackupGUI:
         self.progress.stop()
         self.backup_button.config(state=NORMAL)
         self.stop_button.config(state=DISABLED)
-        
+        BackupDialog(self.master, self.transferred_files_count, self.errors_count)
+
     def on_copy_local_disk_changed(self):
         if self.copy_local_disk.get():
             self.skip_admin_accounts.set(False)
@@ -269,7 +273,11 @@ class BackupGUI:
             self.progress.stop()
             self.backup_button.config(state=NORMAL)
             self.stop_button.config(state=DISABLED)
-                
+            
+        BackupDialog(self.master, self.transferred_files_count, self.errors_count)
+        self.transferred_files_count = 0
+        self.errors_count = 0
+        
     def smb_operation(self, func, *args, **kwargs):
         max_retries = 5
         for attempt in range(max_retries):
@@ -345,13 +353,14 @@ class BackupGUI:
                                     break
                                 dest_file.write(data)
                     self.log_info(f"Copied: {source}", user_friendly=False)
-                    self.progress['value'] += 1
+                    self.transferred_files_count += 1
                 elif item_type == "directory":
                     smbclient.mkdir(destination)
                     self.copy_directory(source, destination)
             except Exception as e:
                 self.log_info(f"Failed to copy {item_type}: {source} due to error: {str(e)}", user_friendly=True)
                 self.error_dict[str(e)] = self.error_dict.get(str(e), 0) + 1
+                self.errors_count += 1
                 
 class BackupDialog:
     def __init__(self, master, transferred_files, errors):
