@@ -22,7 +22,7 @@ UNKNOWN = "unknown"
 class BackupGUI:
     def __init__(self, master):
         self.master = master
-        master.title("Christine's Backup Tool v0.5a")
+        master.title("Christine's Backup Tool v0.5b")
 
         for i in range(5):
             master.grid_rowconfigure(i, weight=0)
