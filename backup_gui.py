@@ -97,7 +97,7 @@ class BackupGUI:
         
         self.transferred_files_count = 0
         self.errors_count = 0
-        
+
     def on_close(self):
         if self.backup_data_thread and self.backup_data_thread.is_alive():
             self.stop_backup()
@@ -145,7 +145,7 @@ class BackupGUI:
         self.progress.stop()
         self.backup_button.config(state=NORMAL)
         self.stop_button.config(state=DISABLED)
-        BackupDialog(self.master, self.transferred_files_count, self.errors_count, self.error_log)
+        BackupDialog(self.master, self.transferred_files_count, self.errors_count)
 
     def on_copy_local_disk_changed(self):
         if self.copy_local_disk.get():
@@ -159,124 +159,127 @@ class BackupGUI:
             
     def backup_data(self):
         try:
-            self.log_info("Entered backup_data method", user_friendly=True)
-            
-            hostname = self.hostname_value.get()
-            username = self.username_value.get()
-            password = self.password_value.get()
-            
-            self.log_info(f"Hostname: {hostname}", user_friendly=True)
-            self.log_info(f"Username: {username}", user_friendly=True)
-            self.log_info(f"Running as user: {os.getlogin()}", user_friendly=True)
-            
-            if self.copy_local_disk.get():
-                source_folder = f"\\\\{hostname}\\C$"
-                share_path = r"\\raymourflanigan.local\root\Departments\LegalRetention\Prior Associate Data retention"
-                destination_folder = os.path.join(share_path, hostname)
-                self.copy_directory(source_folder, destination_folder)
-            else:
-            
-                users_path = f"\\\\{hostname}\\C$\\Users"
+            try:
+                self.log_info("Entered backup_data method", user_friendly=True)
                 
-                all_users_folders = []
-                for item in smbclient.scandir(users_path):
-                    item_path = os.path.join(users_path, item.name)
-                    item_type = self.get_file_type(item_path)
+                hostname = self.hostname_value.get()
+                username = self.username_value.get()
+                password = self.password_value.get()
+                
+                self.log_info(f"Hostname: {hostname}", user_friendly=True)
+                self.log_info(f"Username: {username}", user_friendly=True)
+                self.log_info(f"Running as user: {os.getlogin()}", user_friendly=True)
+                
+                if self.copy_local_disk.get():
+                    source_folder = f"\\\\{hostname}\\C$"
+                    share_path = r"\\raymourflanigan.local\root\Departments\LegalRetention\Prior Associate Data retention"
+                    destination_folder = os.path.join(share_path, hostname)
+                    self.copy_directory(source_folder, destination_folder)
+                else:
+                
+                    users_path = f"\\\\{hostname}\\C$\\Users"
                     
-                    if item_type == "file":
-                        self.log_info(f"Processing file: {item_path}", user_friendly=False)
-                    elif item_type == "directory":
-                        self.log_info(f"Processing directory: {item_path}", user_friendly=False)
-                        all_users_folders.append(item_path)
-                    elif item_type == "symlink":
-                        self.log_info(f"Skipping symlink: {item_path}", user_friendly=False)
-                    else:
-                        self.log_info(f"Skipping unknown item: {item_path}", user_friendly=False)
+                    all_users_folders = []
+                    for item in smbclient.scandir(users_path):
+                        item_path = os.path.join(users_path, item.name)
+                        item_type = self.get_file_type(item_path)
                         
-                source_folders = [folder for folder in all_users_folders if os.path.basename(folder) != "All Users"]
-                if not self.skip_programdata_folder.get():
-                    source_folders.append(f"\\\\{hostname}\\C$\\ProgramData")
+                        if item_type == "file":
+                            self.log_info(f"Processing file: {item_path}", user_friendly=False)
+                        elif item_type == "directory":
+                            self.log_info(f"Processing directory: {item_path}", user_friendly=False)
+                            all_users_folders.append(item_path)
+                        elif item_type == "symlink":
+                            self.log_info(f"Skipping symlink: {item_path}", user_friendly=False)
+                        else:
+                            self.log_info(f"Skipping unknown item: {item_path}", user_friendly=False)
+                            
+                    source_folders = [folder for folder in all_users_folders if os.path.basename(folder) != "All Users"]
+                    if not self.skip_programdata_folder.get():
+                        source_folders.append(f"\\\\{hostname}\\C$\\ProgramData")
 
-                self.log_info("Getting input data", user_friendly=True)
-                domain = "raymourflanigan.local"
-                share_path = r"\\raymourflanigan.local\root\Departments\LegalRetention\Prior Associate Data retention"
-                destination_folder = os.path.join(share_path, hostname)
-                items = self.smb_operation(smbclient.listdir, share_path)
+                    self.log_info("Getting input data", user_friendly=True)
+                    domain = "raymourflanigan.local"
+                    share_path = r"\\raymourflanigan.local\root\Departments\LegalRetention\Prior Associate Data retention"
+                    destination_folder = os.path.join(share_path, hostname)
+                    items = self.smb_operation(smbclient.listdir, share_path)
 
-                try:
-                    self.log_info("Connected to the remote machine", user_friendly=True)
-                except Exception as e:
-                    self.log_info(f"Failed to connect to the remote machine: {e}", user_friendly=True)
-                    return
+                    try:
+                        self.log_info("Connected to the remote machine", user_friendly=True)
+                    except Exception as e:
+                        self.log_info(f"Failed to connect to the remote machine: {e}", user_friendly=True)
+                        return
+                        
+                    self.progress.start()
                     
-                self.progress.start()
-                
-                try:
-                    items = smbclient.listdir(share_path)
-                    if hostname not in items:
-                        try:
-                            smbclient.mkdir(destination_folder)
-                        except Exception as e:
-                            if 'NT_STATUS_OBJECT_NAME_COLLISION' in str(e):
-                                pass
-                            else:
-                                raise
-                        self.setup_logger(destination_folder)
-                        self.log_info(f"Folder '{hostname}' created successfully.", user_friendly=True)
-                except FileNotFoundError:
-                    self.log_info(f"The share path '{share_path}' does not exist.", user_friendly=True)
-                    return
-                except Exception as e:
-                    self.log_info(f"Error while trying to create destination folder: {e}", user_friendly=True)
-                    return
-                    
-                for source_folder in source_folders:
-                        if self.stop_event.is_set():
-                            self.log_info("Backup process stopped in the middle of operation.", user_friendly=True)
-                            return
-                        try:
-                            if self.get_file_type(source_folder) == "nonexistent":
-                                self.log_info(f"The source folder '{source_folder}' does not exist.", user_friendly=True)
-                                continue
-                                
-                            folder_name = os.path.basename(source_folder)
-                            if self.skip_admin_accounts.get() and (folder_name.endswith("-da") or folder_name.endswith("-a") or folder_name.endswith("-A") or folder_name == "Administrator" or folder_name == "rayadmin" or folder_name == "Delete" or folder_name == "Default" or folder_name == "Default User" or folder_name == "defaultuser0" or folder_name == "Public" or folder_name == "svc_pdq"):
-                                self.log_info(f"Skipping admin account: {folder_name}", user_friendly=True)
-                                continue
-                                
-                            destination_subfolder = os.path.join(destination_folder, folder_name)
+                    try:
+                        items = smbclient.listdir(share_path)
+                        if hostname not in items:
                             try:
-                                smbclient.mkdir(destination_subfolder)
+                                smbclient.mkdir(destination_folder)
                             except Exception as e:
-                                if "NT_STATUS_OBJECT_NAME_COLLISION" in str(e):
+                                if 'NT_STATUS_OBJECT_NAME_COLLISION' in str(e):
                                     pass
                                 else:
-                                    raise e
+                                    raise
+                            self.setup_logger(destination_folder)
+                            self.log_info(f"Folder '{hostname}' created successfully.", user_friendly=True)
+                    except FileNotFoundError:
+                        self.log_info(f"The share path '{share_path}' does not exist.", user_friendly=True)
+                        return
+                    except Exception as e:
+                        self.log_info(f"Error while trying to create destination folder: {e}", user_friendly=True)
+                        return
+                        
+                    for source_folder in source_folders:
+                            if self.stop_event.is_set():
+                                self.log_info("Backup process stopped in the middle of operation.", user_friendly=True)
+                                return
+                            try:
+                                if self.get_file_type(source_folder) == "nonexistent":
+                                    self.log_info(f"The source folder '{source_folder}' does not exist.", user_friendly=True)
+                                    continue
                                     
-                            self.log_info(f"Copying directory from {source_folder} to {destination_subfolder}", user_friendly=True)
-                            self.copy_directory(source_folder, destination_subfolder)
-                        except Exception as e:
-                            self.log_info(f"Error: {e}", user_friendly=True)
+                                folder_name = os.path.basename(source_folder)
+                                if self.skip_admin_accounts.get() and (folder_name.endswith("-da") or folder_name.endswith("-a") or folder_name.endswith("-A") or folder_name == "Administrator" or folder_name == "rayadmin" or folder_name == "Delete" or folder_name == "Default" or folder_name == "Default User" or folder_name == "defaultuser0" or folder_name == "Public" or folder_name == "svc_pdq"):
+                                    self.log_info(f"Skipping admin account: {folder_name}", user_friendly=True)
+                                    continue
+                                    
+                                destination_subfolder = os.path.join(destination_folder, folder_name)
+                                try:
+                                    smbclient.mkdir(destination_subfolder)
+                                except Exception as e:
+                                    if "NT_STATUS_OBJECT_NAME_COLLISION" in str(e):
+                                        pass
+                                    else:
+                                        raise e
+                                        
+                                self.log_info(f"Copying directory from {source_folder} to {destination_subfolder}", user_friendly=True)
+                                self.copy_directory(source_folder, destination_subfolder)
+                            except Exception as e:
+                                self.log_info(f"Error: {e}", user_friendly=True)
 
-                self.log_info("Backup completed with following errors:", user_friendly=True)
-                for error, count in self.error_dict.items():
-                    self.log_info(f"Error: {error} | Occurrences: {count}", user_friendly=True)
+                    self.log_info("Backup completed with following errors:", user_friendly=True)
+                    for error, count in self.error_dict.items():
+                        self.log_info(f"Error: {error} | Occurrences: {count}", user_friendly=True)
+                    self.progress.stop()
+                    self.backup_button.config(state=NORMAL)
+                    self.stop_button.config(state=DISABLED)
+                        
+            except Exception as e:
+                error_type, error_instance, traceback = sys.exc_info()
+                filename = traceback.tb_frame.f_code.co_filename
+                line_number = traceback.tb_lineno
+                self.log_info(f"Error at {filename}, line {line_number}: {e}", user_friendly=True)
                 self.progress.stop()
                 self.backup_button.config(state=NORMAL)
                 self.stop_button.config(state=DISABLED)
-                    
-        except Exception as e:
-            error_type, error_instance, traceback = sys.exc_info()
-            filename = traceback.tb_frame.f_code.co_filename
-            line_number = traceback.tb_lineno
-            self.log_info(f"Error at {filename}, line {line_number}: {e}", user_friendly=True)
-            self.progress.stop()
-            self.backup_button.config(state=NORMAL)
-            self.stop_button.config(state=DISABLED)
-            
-        BackupDialog(self.master, self.transferred_files_count, self.errors_count, self.error_log)
-        self.transferred_files_count = 0
-        self.errors_count = 0
+                
+            BackupDialog(self.master, self.transferred_files_count, self.errors_count, self.error_log)
+            self.transferred_files_count = 0
+            self.errors_count = 0
+        except:
+            self.log_info("An unexpected error occurred.", user_friendly=True)
         
     def smb_operation(self, func, *args, **kwargs):
         max_retries = 5
