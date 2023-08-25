@@ -145,7 +145,7 @@ class BackupGUI:
         self.progress.stop()
         self.backup_button.config(state=NORMAL)
         self.stop_button.config(state=DISABLED)
-        BackupDialog(self.master, self.transferred_files_count, self.errors_count)
+        BackupDialog(self.master, self.transferred_files_count, self.errors_count, self.error_log)
 
     def on_copy_local_disk_changed(self):
         if self.copy_local_disk.get():
@@ -274,7 +274,7 @@ class BackupGUI:
             self.backup_button.config(state=NORMAL)
             self.stop_button.config(state=DISABLED)
             
-        BackupDialog(self.master, self.transferred_files_count, self.errors_count)
+        BackupDialog(self.master, self.transferred_files_count, self.errors_count, self.error_log)
         self.transferred_files_count = 0
         self.errors_count = 0
         
@@ -367,22 +367,41 @@ class BackupDialog:
         self.top = Toplevel(master)
         self.top.title("Backup Status")
 
-        # Message
         msg = f"Backup completed with {transferred_files} files transferred and {errors} errors."
         self.message_label = Label(self.top, text=msg)
         self.message_label.pack(pady=20)
 
-        # Buttons Frame
         self.button_frame = Frame(self.top)
         self.button_frame.pack(pady=20)
 
-        # Close Button
         self.close_button = Button(self.button_frame, text="Close", command=self.top.destroy)
         self.close_button.pack(side="left", padx=10)
 
-        # Report Issue Button (unused for now)
         self.report_issue_button = Button(self.button_frame, text="Report Issue", state=tk.DISABLED)
         self.report_issue_button.pack(side="left", padx=10)
+
+        self.show_errors_button = Button(self.top, text="Show Errors", command=self.show_errors)
+        self.show_errors_button.pack(pady=10)
+
+        self.error_log = error_log
+        
+    def show_errors(self):
+        # Create a new window to display the errors
+        error_window = Toplevel(self.top)
+        error_window.title("Backup Errors")
+        
+        # Use a Text widget to display the errors
+        error_text = Text(error_window, wrap=WORD, width=50, height=20)
+        error_text.pack(padx=10, pady=10)
+        
+        # Insert the errors into the Text widget
+        for error in self.error_log:
+            error_text.insert(END, error + "\n\n")
+        
+        # Add a scrollbar if needed (optional)
+        scrollbar = Scrollbar(error_window, command=error_text.yview)
+        scrollbar.pack(side=RIGHT, fill=Y)
+        error_text.config(yscrollcommand=scrollbar.set)
         
 def main():
     root = Tk()
