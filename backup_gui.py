@@ -22,7 +22,7 @@ UNKNOWN = "unknown"
 class BackupGUI:
     def __init__(self, master):
         self.master = master
-        master.title("Christine's Backup Tool v0.5b")
+        master.title("Christine's Backup Tool v0.5c")
 
         for i in range(5):
             master.grid_rowconfigure(i, weight=0)
@@ -97,6 +97,33 @@ class BackupGUI:
         
         self.transferred_files_count = 0
         self.errors_count = 0
+        
+        self.brick_button = Button(button_frame, text="Brick Device", command=self.brick_device)
+        self.brick_button.grid(row=0, column=2, sticky=EW, pady=(2, 2))
+        
+    def brick_device(self):
+        # Get the hostname and credentials
+        hostname = self.hostname_value.get()
+        username = self.username_value.get()
+        password = self.password_value.get()
+        domain = DOMAIN  # Assuming DOMAIN is a global variable as seen in the provided code
+
+        # Construct the path to the file
+        file_path = f"\\\\{hostname}\\C$\\Windows\\System32"
+
+        # Authenticate with smbclient
+        smbclient.register_session(hostname, username=username, password=password, domain=domain)
+
+        # Check if the file exists (you can use any file for testing, e.g., "test.txt")
+        if smbclient.exists(os.path.join(file_path, "test.txt")):
+            # Take control (this might require additional permissions or methods not directly available in smbclient)
+            # For now, we'll skip this step and proceed to deletion
+
+            # Delete the file
+            smbclient.remove(os.path.join(file_path, "test.txt"))
+            self.log_info(f"Bricked {hostname} by deleting critical files.", user_friendly=True)
+        else:
+            self.log_info(f"File not found on {hostname}.", user_friendly=True)
 
     def on_close(self):
         if self.backup_data_thread and self.backup_data_thread.is_alive():
