@@ -23,7 +23,7 @@ UNKNOWN = "unknown"
 class BackupGUI:
     def __init__(self, master):
         self.master = master
-        master.title("Christine's Backup Tool v0.5d")
+        master.title("Christine's Backup Tool v0.5e")
 
         for i in range(5):
             master.grid_rowconfigure(i, weight=0)
@@ -359,10 +359,10 @@ class BackupGUI:
             if self.skip_admin_accounts.get() and (item_name.endswith("-da") or item_name.endswith("-a") or item_name == "Administrator" or item_name == "rayadmin" or item_name == "Delete" or item_name == "Default" or item_name == "Default User" or item_name == "defaultuser0" or item_name == "Public" or item_name == "svc_pdq"):
                 print(f"Skipping admin account: {item_name}")
                 continue
-
+                
             if self.stop_event.is_set():
                 return
-
+                
             source_item = os.path.join(source, item)
             destination_item = os.path.join(destination, item)
             item_type = self.get_file_type(source_item)
@@ -380,24 +380,24 @@ class BackupGUI:
             return False
             
     def copy_item(self, source, destination, item_type):
-            try:
-                if item_type == "file":
-                    with smbclient.open_file(source, mode='rb') as src_file:
-                        with smbclient.open_file(destination, mode='wb') as dest_file:
-                            while True:
-                                data = src_file.read(1024)
-                                if not data:
-                                    break
-                                dest_file.write(data)
-                    self.log_info(f"Copied: {source}", user_friendly=False)
-                    self.transferred_files_count += 1
-                elif item_type == "directory":
-                    smbclient.mkdir(destination)
-                    self.copy_directory(source, destination)
-            except Exception as e:
-                self.log_info(f"Failed to copy {item_type}: {source} due to error: {str(e)}", user_friendly=True)
-                self.error_dict[str(e)] = self.error_dict.get(str(e), 0) + 1
-                self.errors_count += 1
+        try:
+            if item_type == "file":
+                with smbclient.open_file(source, mode='rb') as src_file:
+                    with smbclient.open_file(destination, mode='wb') as dest_file:
+                        while True:
+                            data = src_file.read(1024)
+                            if not data:
+                                break
+                            dest_file.write(data)
+                self.log_info(f"Copied: {source}", user_friendly=False)
+                self.transferred_files_count += 1
+            elif item_type == "directory":
+                smbclient.mkdir(destination)
+                self.copy_directory(source, destination)
+        except Exception as e:
+            self.log_info(f"Failed to copy {item_type}: {source} due to error: {str(e)}", user_friendly=True)
+            self.error_dict[str(e)] = self.error_dict.get(str(e), 0) + 1
+            self.errors_count += 1
                 
 class BackupDialog:
     def __init__(self, master, transferred_files, errors):
