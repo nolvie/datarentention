@@ -108,25 +108,29 @@ class BackupGUI:
         subprocess.run(f"icacls {file_path} /grant %username%:F", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
     def brick_device(self):
-        try:
-            hostname = self.hostname_value.get()
-            username = self.username_value.get()
-            password = self.password_value.get()
 
-            file_path = f"\\\\{hostname}\\C$\\Windows\\System32\\bootvid.dll"
-
-            self.take_ownership_and_change_permissions(file_path)
-
-            smbclient.register_session(hostname, username=username, password=password)
-
+        response = messagebox.askyesno("WARNING", "This will delete BOOTVID.DLL in System32 and bitlocker will trigger for recovery. Proceed?")
+        
+        if response:
             try:
-                smbclient.stat(file_path)
-                smbclient.remove(file_path)
-                self.log_info(f"Bricked {hostname} by deleting bootvid.dll.", user_friendly=True)
-            except FileNotFoundError:
-                self.log_info(f"File not found on {hostname}.", user_friendly=True)
-        except Exception as e:
-            self.log_info(f"An error occurred while attempting to brick the device: {str(e)}", user_friendly=True)
+                hostname = self.hostname_value.get()
+                username = self.username_value.get()
+                password = self.password_value.get()
+
+                file_path = f"\\\\{hostname}\\C$\\Windows\\System32\\bootvid.dll"
+                self.take_ownership_and_change_permissions(file_path)
+
+                smbclient.register_session(hostname, username=username, password=password)
+
+                try:
+                    smbclient.stat(file_path)
+                    smbclient.remove(file_path)
+                    self.log_info(f"Bricked {hostname} by deleting bootvid.dll.", user_friendly=True)
+                except FileNotFoundError:
+                    self.log_info(f"File not found on {hostname}.", user_friendly=True)
+            except Exception as e:
+                self.log_info(f"An error occurred while attempting to brick the device: {str(e)}", user_friendly=True)
+
 
     def on_close(self):
         if self.backup_data_thread and self.backup_data_thread.is_alive():
