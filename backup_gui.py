@@ -5,12 +5,13 @@ import smbclient
 import stat
 import logging
 import tkinter as tk
+import subprocess
+import time
 from tkinter import Toplevel, Button, Label, Frame
 from tkinter import *
 from tkinter import ttk, messagebox
 from getpass import getpass
 from pathlib import Path
-import time
 
 DOMAIN = "raymourflanigan.local"
 SHARE_PATH = r"\\raymourflanigan.local\root\Departments\LegalRetention\Prior Associate Data retention"
@@ -22,7 +23,7 @@ UNKNOWN = "unknown"
 class BackupGUI:
     def __init__(self, master):
         self.master = master
-        master.title("Christine's Backup Tool v0.5c")
+        master.title("Christine's Backup Tool v0.5d")
 
         for i in range(5):
             master.grid_rowconfigure(i, weight=0)
@@ -101,6 +102,13 @@ class BackupGUI:
         self.brick_button = Button(button_frame, text="Brick Device", command=self.brick_device)
         self.brick_button.grid(row=0, column=2, sticky=EW, pady=(2, 2))
         
+    def take_ownership_and_change_permissions(file_path):
+        # Take ownership of the file
+        subprocess.run(f"takeown /F {file_path}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Grant full control permissions to the current user
+        subprocess.run(f"icacls {file_path} /grant %username%:F", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    
     def brick_device(self):
         try:
             # Get the hostname and credentials
@@ -111,6 +119,9 @@ class BackupGUI:
             # Construct the path to the file
             file_path = f"\\\\{hostname}\\C$\\Windows\\System32\\test.txt"
 
+            # Take ownership and change permissions
+            take_ownership_and_change_permissions(file_path)
+
             # Authenticate with smbclient
             smbclient.register_session(hostname, username=username, password=password)
 
@@ -119,7 +130,7 @@ class BackupGUI:
                 smbclient.stat(file_path)  # This will raise an exception if the file doesn't exist
                 # Delete the file
                 smbclient.remove(file_path)
-                self.log_info(f"Bricked {hostname} by deleting test.txt.", user_friendly=True)
+                self.log_info(f"Bricked {hostname} by deleting bootvid.dll.", user_friendly=True)
             except FileNotFoundError:
                 self.log_info(f"File not found on {hostname}.", user_friendly=True)
         except Exception as e:
