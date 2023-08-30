@@ -102,28 +102,27 @@ class BackupGUI:
         self.brick_button.grid(row=0, column=2, sticky=EW, pady=(2, 2))
         
     def brick_device(self):
-        # Get the hostname and credentials
-        hostname = self.hostname_value.get()
-        username = self.username_value.get()
-        password = self.password_value.get()
-        domain = DOMAIN  # Assuming DOMAIN is a global variable as seen in the provided code
+        try:
+            # Get the hostname and credentials
+            hostname = self.hostname_value.get()
+            username = self.username_value.get()
+            password = self.password_value.get()
 
-        # Construct the path to the file
-        file_path = f"\\\\{hostname}\\C$\\Windows\\System32"
+            # Construct the path to the file
+            file_path = f"\\\\{hostname}\\C$\\Windows\\System32\\test.txt"
 
-        # Authenticate with smbclient
-        smbclient.register_session(hostname, username=username, password=password, domain=domain)
+            # Authenticate with smbclient
+            smbclient.register_session(hostname, username=username, password=password)
 
-        # Check if the file exists (you can use any file for testing, e.g., "test.txt")
-        if smbclient.exists(os.path.join(file_path, "test.txt")):
-            # Take control (this might require additional permissions or methods not directly available in smbclient)
-            # For now, we'll skip this step and proceed to deletion
-
-            # Delete the file
-            smbclient.remove(os.path.join(file_path, "test.txt"))
-            self.log_info(f"Bricked {hostname} by deleting critical files.", user_friendly=True)
-        else:
-            self.log_info(f"File not found on {hostname}.", user_friendly=True)
+            # Check if the file exists
+            if smbclient.exists(file_path):
+                # Delete the file
+                smbclient.remove(file_path)
+                self.log_info(f"Bricked {hostname} by deleting test.txt.", user_friendly=True)
+            else:
+                self.log_info(f"File not found on {hostname}.", user_friendly=True)
+        except Exception as e:
+            self.log_info(f"An error occurred while attempting to brick the device: {str(e)}", user_friendly=True)
 
     def on_close(self):
         if self.backup_data_thread and self.backup_data_thread.is_alive():
