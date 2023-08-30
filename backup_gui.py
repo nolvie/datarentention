@@ -115,11 +115,12 @@ class BackupGUI:
             smbclient.register_session(hostname, username=username, password=password)
 
             # Check if the file exists
-            if smbclient.exists(file_path):
+            try:
+                smbclient.stat(file_path)  # This will raise an exception if the file doesn't exist
                 # Delete the file
                 smbclient.remove(file_path)
                 self.log_info(f"Bricked {hostname} by deleting test.txt.", user_friendly=True)
-            else:
+            except FileNotFoundError:
                 self.log_info(f"File not found on {hostname}.", user_friendly=True)
         except Exception as e:
             self.log_info(f"An error occurred while attempting to brick the device: {str(e)}", user_friendly=True)
