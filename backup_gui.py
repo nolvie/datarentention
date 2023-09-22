@@ -351,9 +351,13 @@ class BackupGUI:
         self.progress['value'] = 0
         self.log_info(f"Total files to be copied from {source}: {self.total_files}", user_friendly=True)
 
+        # Check if the destination directory exists and create it if it doesn't
+        if not smbclient.exists(destination):
+            smbclient.mkdir(destination)
+
         if self.stop_event.is_set():
             return
-            
+                
         for item in smbclient.listdir(source):
             print(f"Processing item: {item}")
             item_name = os.path.basename(item)
